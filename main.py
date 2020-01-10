@@ -1,3 +1,13 @@
+import uuid
+import json
+import gi
+import os
+
+gi.require_version('Gdk', '3.0')
+gi.require_version('Gtk', '3.0')
+
+from gi.repository import Gdk, Gtk, GObject
+from os.path import expanduser
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent
@@ -5,8 +15,6 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
-from os.path import expanduser
-import os, json, uuid, pyperclip
 
 class NotesExtension(Extension):
     def __init__(self):
@@ -35,7 +43,11 @@ def deleteNote(deleteNote):
     f.close()
 
 def copyToClipboard(note):
-    pyperclip.copy(note['data'])
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    clipboard.set_text(note['data'], -1)
+    clipboard.store()
+    GObject.timeout_add(1, Gtk.main_quit)
+    Gtk.main()
 
 def getNotes():
     notes = []
