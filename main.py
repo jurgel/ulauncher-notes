@@ -30,6 +30,7 @@ if not os.path.isfile(notesFilePath):
 
 def saveNote(note):
     note['id'] = str(uuid.uuid4())
+    del note['mode']
     f = open(notesFilePath, 'a')
     f.write('%s\n' % json.dumps(note))
     f.close()
