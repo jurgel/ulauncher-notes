@@ -34,6 +34,15 @@ def saveNote(note):
     f.write('%s\n' % json.dumps(note))
     f.close()
 
+def updateNote(newNote):
+    notes = getNotes()
+    f = open(notesFilePath, 'w')
+    for note in notes:
+        if note['id'] == newNote['id']:
+            note['label'] = newNote['new_label']
+        f.write('%s\n' % json.dumps(note))
+    f.close()
+
 def deleteNote(deleteNote):
     notes = getNotes()
     f = open(notesFilePath, 'w')
@@ -65,7 +74,7 @@ def getNotes():
 
 class KeywordQueryEventListener(EventListener):
     def on_event(self, event, extension):
-        if event.get_keyword() == 'notes':
+        if event.get_keyword() == 'n':
             resNotes = []
             f = open(notesFilePath, 'r')
             lines = f.read().split('\n')
@@ -74,17 +83,24 @@ class KeywordQueryEventListener(EventListener):
             notes = getNotes()            	
             for note in notes:
                 note['mode'] = ''
+
                 if event.get_argument() == 'delete' or event.get_argument() == 'del' or event.get_argument() == 'd':
                     note['mode'] = 'deleteNote'
-                if event.get_argument() == 'copy' or event.get_argument() == 'c':
+                elif event.get_argument() == 'copy' or event.get_argument() == 'c':
                     note['mode'] = 'copyToClipboard'
+                elif event.get_argument() is None or event.get_argument().strip() == '':
+                    note['mode'] = 'copyToClipboard'
+                else:
+                    note['mode'] = 'updateNote'
+                    note['new_label'] = event.get_argument()
+
                 resNotes.append(ExtensionResultItem(icon='note.png',
                                          name=note['data'],
-                                         description='',
+                                         description=note.get('label', ''),
                                          on_enter=ExtensionCustomAction(note, keep_app_open=True)))
             return RenderResultListAction(resNotes)
 
-        if event.get_keyword() == 'note':
+        if event.get_keyword() == 'nn':
             note = {}
             note['data'] = event.get_argument()
             note['mode'] = 'addNewNote'
@@ -99,12 +115,15 @@ class ItemEnterEventListener(EventListener):
         note = event.get_data()
         if note['mode'] == 'addNewNote':
             saveNote(note)
-        if note['mode'] == 'deleteNote':
+        elif note['mode'] == 'deleteNote':
             deleteNote(note)
-        if note['mode'] == 'copyToClipboard':
+        elif note['mode'] == 'copyToClipboard':
             copyToClipboard(note)
+        elif note['mode'] == 'updateNote':
+            updateNote(note)
 
         return HideWindowAction()
 
 if __name__ == '__main__':
     NotesExtension().run()
+
